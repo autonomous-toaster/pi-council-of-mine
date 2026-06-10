@@ -1,0 +1,22 @@
+{
+	"name": "pi-council-of-mine",
+	"version": "0.1.0",
+	"description": "Pi extension that consults a council of 9 AI minds for diverse perspectives, voting, and synthesis on complex questions.",
+	"type": "module",
+	"license": "MIT",
+	"files": [
+		"index.ts",
+		"src/",
+		"README.md"
+	],
+	"pi": {
+		"extensions": [
+			"./index.ts"
+		]
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-ai": "*",
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*"
+	}
+}
