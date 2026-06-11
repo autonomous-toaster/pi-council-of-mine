@@ -99,3 +99,86 @@ export function formatCouncilResults(
 
 	return lines.join("\n");
 }
+
+function truncateOpinion(text: string, maxLen: number): string {
+	// Remove newlines and truncate cleanly at word boundary
+	const flat = text.replace(/\n+/g, " ").trim();
+	if (flat.length <= maxLen) return flat;
+	const truncated = flat.slice(0, maxLen);
+	// Don't break mid-word
+	const lastSpace = truncated.lastIndexOf(" ");
+	if (lastSpace > maxLen * 0.7) return truncated.slice(0, lastSpace) + "...";
+	return truncated + "...";
+}
+
+export function formatCompactCouncilResults(
+	topic: string,
+	opinions: MemberOpinion[],
+	tallyResult: TallyResult,
+	synthesis: string,
+	tokenUsage: { input: number; output: number },
+): string {
+	const lines: string[] = [];
+
+	lines.push("");
+	lines.push(`🏛️  Council of Mine — "${topic}"`);
+	lines.push("");
+
+	// Opinions (one line each)
+	lines.push("💭 Opinions:");
+	for (const op of opinions) {
+		const icon = getIcon(op.memberId);
+		const summary = truncateOpinion(op.opinion, 90);
+		lines.push(`  ${icon}  ${op.memberName.padEnd(18)} ${summary}`);
+	}
+	lines.push("");
+
+	// Vote tallies
+	lines.push("🗳️  Results:");
+	const maxVotes = Math.max(...Object.values(tallyResult.voteCounts), 0);
+	const sorted = Object.entries(tallyResult.voteCounts)
+		.sort(([, a], [, b]) => b - a)
+		.filter(([, count]) => count > 0);
+
+	const winnerIds = new Set(tallyResult.winners.map((w) => w.memberId));
+
+	for (const [memberIdStr, count] of sorted) {
+		const memberId = Number.parseInt(memberIdStr, 10);
+		const op = opinions.find((o) => o.memberId === memberId);
+		if (!op) continue;
+		const icon = getIcon(memberId);
+		const barLen = maxVotes > 0 ? Math.round((count / maxVotes) * 12) : 0;
+		const bar = "█".repeat(barLen).padEnd(12);
+		const winner = winnerIds.has(memberId) ? "  ← Winner" : "";
+		lines.push(
+			`  ${icon}  ${op.memberName.padEnd(18)} ${bar}  ${count} vote${count === 1 ? "" : "s"}${winner}`,
+		);
+	}
+	lines.push("");
+
+	// Synthesis
+	if (synthesis && !synthesis.startsWith("Unable to generate")) {
+		lines.push("🎯 Synthesis:");
+		// Word-wrap synthesis to ~72 chars
+		const words = synthesis.split(" ");
+		let synthLine = "";
+		for (const word of words) {
+			if (synthLine.length + word.length + 1 > 72) {
+				lines.push(`   ${synthLine}`);
+				synthLine = word;
+			} else {
+				synthLine = synthLine ? `${synthLine} ${word}` : word;
+			}
+		}
+		if (synthLine) lines.push(`   ${synthLine}`);
+		lines.push("");
+	}
+
+	// Token usage
+	lines.push(
+		`   ↑${tokenUsage.input.toLocaleString()} ↓${tokenUsage.output.toLocaleString()}  (${(tokenUsage.input + tokenUsage.output).toLocaleString()} total)`,
+	);
+	lines.push("");
+
+	return lines.join("\n");
+}

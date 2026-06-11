@@ -15,6 +15,7 @@
  * - /council on [provider/model] — Enable council tool (persists to config)
  * - /council off                 — Disable council tool (persists to config)
  * - /council config [key=value]  — Show/edit council configuration
+ * - /council ask <question>      — Ask the council a question directly
  * - /council                     — Show status
  */
 
@@ -25,9 +26,10 @@ import {
 	getAgentDir,
 } from "@earendil-works/pi-coding-agent";
 import type { ThinkingLevel, TextContent } from "@earendil-works/pi-ai";
-import { Text } from "@earendil-works/pi-tui";
+import { Text, type AutocompleteItem } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { runCouncilDebate } from "./src/council.ts";
+import { formatCompactCouncilResults } from "./src/texts.ts";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -350,8 +352,60 @@ Use this when you need diverse perspectives on a complex decision. Council membe
 
 	// ── command registration ───────────────────────────────────────────
 
+	const SUBCOMMANDS = ["on", "off", "ask", "config"] as const;
+	const CONFIG_KEYS = [
+		"provider",
+		"model",
+		"maxTokens",
+		"reasoning",
+		"maxUsesPerRun",
+		"memberMaxTokens",
+		"memberReasoning",
+		"memberConcurrency",
+	] as const;
+
 	pi.registerCommand("council", {
-		description: "Manage Council of Mine tool: on, off, config",
+		description: "Manage Council of Mine tool: on, off, config, ask",
+
+		getArgumentCompletions: (prefix: string): AutocompleteItem[] | null => {
+			const trimmed = prefix.trim();
+			if (!trimmed) {
+				// No subcommand yet — suggest all
+				return SUBCOMMANDS.map((s) => ({ value: s, label: s }));
+			}
+
+			const parts = trimmed.split(/\s+/);
+			const first = parts[0]?.toLowerCase();
+
+			if (
+				!first ||
+				!SUBCOMMANDS.includes(first as (typeof SUBCOMMANDS)[number])
+			) {
+				// First word is not a recognized subcommand — filter subcommands
+				const filtered = SUBCOMMANDS.filter((s) => s.startsWith(first ?? ""));
+				return filtered.length > 0
+					? filtered.map((s) => ({ value: s, label: s }))
+					: null;
+			}
+
+			// First word is a recognized subcommand — check what follows
+			if (first === "config") {
+				const second = parts[1] ?? "";
+				const filtered = CONFIG_KEYS.filter((k) =>
+					k.startsWith(second.replace(/=$/, "")),
+				);
+				return filtered.length > 0
+					? filtered.map((k) => ({
+							value: `${k}=`,
+							label: `${k}=`,
+						}))
+					: null;
+			}
+
+			// For on, off, ask — no further completions
+			return null;
+		},
+
 		handler: async (args, ctx) => {
 			const parts = args.trim().split(/\s+/);
 			const subcommand = parts[0]?.toLowerCase() || "";
@@ -405,6 +459,72 @@ Use this when you need diverse perspectives on a complex decision. Council membe
 					break;
 				}
 
+				case "ask": {
+					const question = parts.slice(1).join(" ").trim();
+					if (!question) {
+						ctx.ui.notify(
+							"Usage: /council ask <question>\nExample: /council ask Should I use SQLite or PostgreSQL?",
+							"info",
+						);
+						return;
+					}
+
+					const model = ctx.modelRegistry.find(config.provider, config.model);
+					if (!model) {
+						ctx.ui.notify(
+							`Council model ${config.provider}/${config.model} not found in model registry`,
+							"error",
+						);
+						return;
+					}
+
+					const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
+					if (!auth.ok || !auth.apiKey) {
+						const errorMsg = auth.ok ? "No API key configured" : auth.error;
+						ctx.ui.notify(
+							`${errorMsg} for council model ${config.provider}/${config.model}.`,
+							"error",
+						);
+						return;
+					}
+
+					ctx.ui.notify(
+						`🏛️ Council of Mine: debating "${question.slice(0, 80)}..."`,
+						"info",
+					);
+
+					try {
+						const result = await runCouncilDebate(model, question, {
+							apiKey: auth.apiKey,
+							headers: auth.headers,
+							reasoning: config.reasoning,
+							maxTokens: config.maxTokens,
+							memberReasoning: config.memberReasoning,
+							memberMaxTokens: config.memberMaxTokens,
+							memberConcurrency: config.memberConcurrency,
+							onStatus: (msg) => {
+								ctx.ui.notify(msg, "info");
+							},
+						});
+
+						ctx.ui.notify("✅ Council debate complete!", "info");
+
+						const compact = formatCompactCouncilResults(
+							question,
+							result.opinions,
+							result.tallyResult,
+							result.synthesis,
+							result.tokenUsage,
+						);
+
+						ctx.ui.notify(compact, "info");
+					} catch (err) {
+						const msg = err instanceof Error ? err.message : String(err);
+						ctx.ui.notify(`Council debate failed: ${msg}`, "error");
+					}
+					break;
+				}
+
 				case "config": {
 					const rest = parts.slice(1).join(" ");
 					if (!rest) {
@@ -427,6 +547,7 @@ Use this when you need diverse perspectives on a complex decision. Council membe
 							"Usage:",
 							"  /council on [provider/model]  Enable council",
 							"  /council off                  Disable council",
+							"  /council ask <question>       Ask the council a question",
 							"  /council config key=value     Set config value",
 							"",
 							"Config keys: provider, model, maxTokens, reasoning, maxUsesPerRun, memberMaxTokens, memberReasoning, memberConcurrency",
@@ -545,6 +666,7 @@ Use this when you need diverse perspectives on a complex decision. Council membe
 						"Commands:",
 						"  /council on [provider/model]  Enable council",
 						"  /council off                  Disable council",
+						"  /council ask <question>       Ask the council a question",
 						"  /council config               Show full configuration",
 					];
 					ctx.ui.notify(lines.join("\n"), "info");
