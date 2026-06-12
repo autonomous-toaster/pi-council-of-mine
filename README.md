@@ -4,8 +4,8 @@ A [pi](https://github.com/earendil-works/pi) extension that consults a council o
 
 Inspired by:
 
-- [pi-advisor](https://github.com/earendil-works/pi-advisor) — pi's advisor extension that informed the config and tool pattern
-- [council-of-mine MCP server](https://github.com/autonomous-toaster/mcp-council-of-mine) — the 9 archetype personalities and the debate workflow (opinions, voting, synthesis)
+- [pi-advisor](https://github.com/RimuruW/pi-advisor) — pi's advisor extension that informed the config and tool pattern
+- [council-of-mine MCP server](https://github.com/block/mcp-council-of-mine) — the 9 archetype personalities and the debate workflow (opinions, voting, synthesis)
 
 This extension reimplements the council-of-mine concept natively as a pi TypeScript extension using the pi AI SDK directly, without MCP.
 
