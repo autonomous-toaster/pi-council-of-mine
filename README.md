@@ -4,19 +4,19 @@ A [pi](https://github.com/earendil-works/pi) extension that consults a council o
 
 Inspired by:
 
-- [pi-advisor](https://github.com/earendil-works/pi-advisor) — pi's built-in advisor extension that informed the config and tool pattern
+- [pi-advisor](https://github.com/earendil-works/pi-advisor) — pi's advisor extension that informed the config and tool pattern
 - [council-of-mine MCP server](https://github.com/autonomous-toaster/mcp-council-of-mine) — the 9 archetype personalities and the debate workflow (opinions, voting, synthesis)
 
 This extension reimplements the council-of-mine concept natively as a pi TypeScript extension using the pi AI SDK directly, without MCP.
 
 ## Installation
 
-Clone the repository and link it as a pi extension:
+Install or run it one shot :
 
 ```bash
-git clone https://github.com/autonomous-toaster/pi-council-of-mine
-cd pi-council-of-mine
-pi link .
+pi install git:https://github.com/autonomous-toaster/pi-council-of-mine
+# or oneshot
+pi -e git:https://github.com/autonomous-toaster/pi-council-of-mine
 ```
 
 ## Usage
@@ -24,7 +24,7 @@ pi link .
 Enable the council:
 
 ```
-/council on anthropic/claude-opus-4-6
+/council on anthropic/claude-haiku-4-5
 ```
 
 When enabled, the executor LLM can call `ask_council` to get a multi-perspective debate on any question:
@@ -145,6 +145,8 @@ Configure at runtime:
 ## Development
 
 This project was developed entirely by AI agents using pi's agent workflow and the OpenSpec change management system.
+
+All credits goes to [pi-advisor](https://github.com/earendil-works/pi-advisor) and [council-of-mine MCP server](https://github.com/autonomous-toaster/mcp-council-of-mine) authors.
 
 ### Architecture
 
