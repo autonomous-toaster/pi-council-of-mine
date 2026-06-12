@@ -24,7 +24,7 @@ export interface OpinionGenerationConfig {
 	tokenAccumulator?: { input: number; output: number };
 }
 
-const OPINION_MAX_TOKENS = 400;
+const OPINION_MAX_TOKENS = 800;
 const OPINION_TEMPERATURE = 0.8;
 
 function buildOpinionPrompt(

@@ -28,7 +28,7 @@ import {
 import type { ThinkingLevel, TextContent } from "@earendil-works/pi-ai";
 import { Text, type AutocompleteItem } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
-import { runCouncilDebate } from "./src/council.ts";
+import { runCouncilDebate, thinkingTokenBudget } from "./src/council.ts";
 import { formatCompactCouncilResults } from "./src/texts.ts";
 
 // ---------------------------------------------------------------------------
@@ -42,7 +42,12 @@ interface CouncilConfig {
 	maxTokens: number;
 	reasoning: ThinkingLevel;
 	maxUsesPerRun: number;
-	memberMaxTokens: number;
+	/**
+	 * Explicit member token budget override. When set, overrides the
+	 * auto-scaled budget based on memberReasoning.
+	 * When undefined, the budget is computed from memberReasoning level.
+	 */
+	memberMaxTokens?: number;
 	memberReasoning: ThinkingLevel;
 	memberConcurrency: number;
 }
@@ -54,7 +59,6 @@ const DEFAULT_CONFIG: CouncilConfig = {
 	maxTokens: 4096,
 	reasoning: "off",
 	maxUsesPerRun: 3,
-	memberMaxTokens: 400,
 	memberReasoning: "off",
 	memberConcurrency: 3,
 };
@@ -130,7 +134,7 @@ function loadConfig(path?: string): CouncilConfig {
 			memberMaxTokens:
 				typeof raw.memberMaxTokens === "number"
 					? raw.memberMaxTokens
-					: DEFAULT_CONFIG.memberMaxTokens,
+					: undefined,
 			memberReasoning: VALID_REASONING_LEVELS.includes(raw.memberReasoning)
 				? raw.memberReasoning
 				: DEFAULT_CONFIG.memberReasoning,
@@ -540,7 +544,7 @@ Use this when you need diverse perspectives on a complex decision. Council membe
 							`  Max tokens:   ${config.maxTokens}`,
 							`  Reasoning:    ${config.reasoning}`,
 							`  Max uses/run: ${config.maxUsesPerRun}`,
-							`  Member tokens:   ${config.memberMaxTokens}`,
+							`  Member tokens:   ${config.memberMaxTokens ?? `auto (${thinkingTokenBudget(config.memberReasoning, 400)} for ${config.memberReasoning})`}`,
 							`  Member reasoning: ${config.memberReasoning}`,
 							`  Member concurrency: ${config.memberConcurrency}`,
 							"",

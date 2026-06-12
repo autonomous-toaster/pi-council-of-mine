@@ -26,7 +26,7 @@ export interface VotingConfig {
 	tokenAccumulator?: { input: number; output: number };
 }
 
-const VOTE_MAX_TOKENS = 150;
+const VOTE_MAX_TOKENS = 300;
 const VOTE_TEMPERATURE = 0.7;
 
 export function parseVoteResponse(

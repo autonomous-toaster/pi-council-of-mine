@@ -5,6 +5,32 @@ import { tallyVotes, generateSynthesis, type TallyResult } from "./results.ts";
 import { formatCouncilResults } from "./texts.ts";
 import { COUNCIL_MEMBERS } from "./members.ts";
 
+// ---------------------------------------------------------------------------
+// Token budget scaling for thinking levels
+// ---------------------------------------------------------------------------
+
+const THINKING_MULTIPLIERS: Record<ThinkingLevel, number> = {
+	off: 1,
+	minimal: 2,
+	low: 3,
+	medium: 5,
+	high: 10,
+	xhigh: 20,
+};
+
+/**
+ * Scale a base token budget according to the reasoning level.
+ * Higher thinking levels consume more tokens for thinking blocks,
+ * so the total budget needs to be larger to leave room for text output.
+ */
+export function thinkingTokenBudget(
+	level: ThinkingLevel | undefined,
+	baseTokens: number,
+): number {
+	const multiplier = THINKING_MULTIPLIERS[level ?? "off"] ?? 1;
+	return Math.round(baseTokens * multiplier);
+}
+
 export interface CouncilResult {
 	opinions: MemberOpinion[];
 	votes: Vote[];
@@ -50,19 +76,25 @@ export async function runCouncilDebate(
 		signal,
 	} = config;
 
+	const effectiveMemberReasoning = memberReasoning ?? reasoning;
+	const resolvedMemberMaxTokens =
+		memberMaxTokens ?? thinkingTokenBudget(effectiveMemberReasoning, 400);
+	const resolvedVoteMaxTokens =
+		memberMaxTokens ?? thinkingTokenBudget(effectiveMemberReasoning, 150);
+
 	const opinionConfig = {
 		apiKey,
 		headers,
-		reasoning: memberReasoning ?? reasoning,
-		maxTokens: memberMaxTokens ?? 400,
+		reasoning: effectiveMemberReasoning,
+		maxTokens: resolvedMemberMaxTokens,
 		memberConcurrency: memberConcurrency ?? 3,
 		tokenAccumulator,
 	};
 	const votingConfig = {
 		apiKey,
 		headers,
-		reasoning: memberReasoning ?? reasoning,
-		maxTokens: memberMaxTokens ?? 400,
+		reasoning: effectiveMemberReasoning,
+		maxTokens: resolvedVoteMaxTokens,
 		memberConcurrency: memberConcurrency ?? 3,
 		tokenAccumulator,
 	};
