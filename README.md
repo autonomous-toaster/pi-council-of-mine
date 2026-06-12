@@ -173,4 +173,4 @@ Key design points:
 
 ## License
 
-MIT
+WTFPL
