@@ -42,7 +42,7 @@ The council returns:
 
 ### Example
 
-For quick testing, use a fast model like `claude-3-5-haiku-latest` (chat completions API) for council members, with `memberReasoning` set to `"off"` and `memberMaxTokens` at 400. The default model `claude-opus-4-6` is better for deep reasoning on complex questions.
+For quick testing, use a fast model like `haiku` for council members, with `memberReasoning` set to `"off"` and `memberMaxTokens` at 400.
 
 ## Real-World Example: "Is Neo The One?"
 
@@ -113,7 +113,7 @@ Configuration is stored in `<agentDir>/council.json` as a JSON file. Available o
 | Key | Default | Description |
 |-----|---------|-------------|
 | `provider` | `"anthropic"` | LLM provider |
-| `model` | `"claude-opus-4-6"` | Model for council debates. `claude-3-5-haiku-latest` works well for fast testing |
+| `model` | `"claude-haiku-3-5"` | Model for council debates. |
 | `maxTokens` | `4096` | Max tokens for synthesis |
 | `reasoning` | `"high"` | Thinking level for synthesis |
 | `maxUsesPerRun` | `3` | Max tool calls per agent run |
