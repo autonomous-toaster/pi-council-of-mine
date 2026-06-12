@@ -146,7 +146,7 @@ Configure at runtime:
 
 This project was developed entirely by AI agents using pi's agent workflow and the OpenSpec change management system.
 
-All credits goes to [pi-advisor](https://github.com/earendil-works/pi-advisor) and [council-of-mine MCP server](https://github.com/autonomous-toaster/mcp-council-of-mine) authors.
+All credits goes to [pi-advisor](https://github.com/RimuruW/pi-advisor) and [council-of-mine MCP server](https://github.com/block/mcp-council-of-mine) authors.
 
 ### Architecture
 
